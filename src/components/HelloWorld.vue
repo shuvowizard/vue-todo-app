@@ -2,6 +2,8 @@
 import { reactive, ref, computed } from 'vue'
 
 const todo = ref("")
+const editId = ref(null)
+const editTitle = ref(null)
 
 const todos = reactive([
   { id: 1, title: 'Todo 1', completed: false },
@@ -18,7 +20,7 @@ const removeTodo = (index) => {
 }
 
 const addTodo = () => {
-  if(todo.value.trim() === "") {
+  if (todo.value.trim() === "") {
     return
   }
 
@@ -38,6 +40,26 @@ const allTodos = computed(() => {
 const completedTodos = computed(() => {
   return todos.filter(todo => todo.completed).length
 })
+
+const editTodo = (todo) => {
+  editId.value = todo.id
+  editTitle.value = todo.title
+}
+
+const saveEdit = (todo) => {
+  if (editTitle.value.trim() === "") {
+    editId.value = null
+    return
+  }
+  todo.title = editTitle.value.trim()
+  editId.value = null
+  editTitle.value = null
+}
+
+const cancelEdit = () => {
+  editId.value = null
+  editTitle.value = null
+}
 
 </script>
 
@@ -69,21 +91,66 @@ const completedTodos = computed(() => {
     <!-- Todo List -->
     <ul class="space-y-3" v-if="todos.length" >
       <li v-for="(todo, index) in todos" :key="todo.id" class="group flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-        <div class="flex items-center">
-          <input @input="checkCompleted(index)" :checked="todo.completed"
-            class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
-            type="checkbox" :id="`todo-${todo.id}`"
-          />
-          <label class="ml-3 block text-gray-700 cursor-pointer select-none group-hover:text-gray-900" :for="`todo-${todo.id}`">
-            <span :class="{'line-through text-gray-400': todo.completed}" class="text-lg font-medium transition-all">{{ todo.title }}</span>
-          </label>
-        </div>
+        
+        <!-- Edit Mode -->
+        <template v-if="editId === todo.id">
+          <div class="flex items-center w-full gap-2">
+            <input 
+              v-model="editTitle"
+              @keyup.enter="saveEdit(todo)"
+              @keyup.escape="cancelEdit"
+              class="flex-1 border-b-2 border-teal-500 focus:outline-none px-2 py-1 text-gray-700"
+              type="text"
+              autofocus
+            />
+            <!-- Save Button -->
+            <button @click="saveEdit(todo)" class="p-1 text-green-600 hover:bg-green-100 rounded transition" title="Save">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </button>
 
-        <button @click="removeTodo(index)" class="shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-          </svg>
-        </button>
+            <!-- Cancel Button -->
+            <button @click="cancelEdit()" class="p-1 text-gray-500 hover:bg-gray-200 rounded transition" title="Cancel">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </template>
+
+          <!-- View Mode -->
+        <template v-else>
+          <div class="flex items-center">
+            <input @input="checkCompleted(index)" :checked="todo.completed"
+              class="h-5 w-5 text-teal-600 focus:ring-teal-500 border-gray-300 rounded cursor-pointer"
+              type="checkbox" :id="`todo-${todo.id}`"
+            />
+            <label class="ml-3 block text-gray-700 cursor-pointer select-none group-hover:text-gray-900" :for="`todo-${todo.id}`">
+              <span :class="{'line-through text-gray-400': todo.completed}" class="text-lg font-medium transition-all">{{ todo.title }}</span>
+            </label>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+           
+            <!-- Edit Button -->
+            <button @click="editTodo(todo)" class="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-full transition" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+
+            <!-- Delete Button -->
+            <button @click="removeTodo(index)" class="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition" title="Delete">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+
+          </div>
+        </template>
+
       </li>
     </ul>
 
